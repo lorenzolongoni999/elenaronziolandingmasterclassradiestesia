@@ -34,8 +34,10 @@ landing-radiestesia/
     │   └── README.md
     └── images/
         ├── elena-ronzio.jpg
+        ├── antonina-scolaro.jpg
         ├── logo-elena-ronzio.png
         ├── pendolo-community.jpg
+        ├── pendolo-discipline-background.jpg
         └── pendolo-masterclass.jpg
 ```
 
@@ -53,9 +55,9 @@ Il form include un identificativo nascosto della Masterclass, validazione front-
 
 ## Immagini e animazioni
 
-La pagina usa il logo, la foto di Elena e le fotografie del pendolo ricevute. Le immagini sono state ridimensionate e compresse come JPEG progressivi per il web. La sezione di Antonina è stata progettata come layout editoriale senza fotografia.
+La pagina usa il logo, le foto di Elena e Antonina e le fotografie del pendolo ricevute. Le immagini sono state ottimizzate per il web; il panorama con il pendolo è applicato in trasparenza alla seconda sezione senza ridurre il contrasto del testo.
 
-Titoli, card, statistiche e fotografie si compongono progressivamente durante lo scroll. Le animazioni rispettano `prefers-reduced-motion` e i contenuti restano visibili anche se JavaScript non è disponibile. Le prove sociali sono generali e la pagina specifica che la Masterclass gratuita non rilascia un attestato.
+Titoli, testi, card, pannelli, statistiche e fotografie si compongono progressivamente durante lo scroll con sequenze coordinate, wipe fotografici, parallax leggero e contatori. Le animazioni rispettano `prefers-reduced-motion`, vengono alleggerite sui dispositivi touch e i contenuti restano visibili anche se JavaScript non è disponibile. Le prove sociali sono generali e la pagina specifica che la Masterclass gratuita non rilascia un attestato.
 
 ## Documenti legali
 
