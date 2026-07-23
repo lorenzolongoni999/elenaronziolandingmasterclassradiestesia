@@ -63,6 +63,11 @@
   --night-soft: #23213b;
   --gold: #c6a15b;
   --gold-light: #e2c985;
+  --red-accent: #9b2f43;
+  --red-accent-deep: #6f1f31;
+  --red-accent-line: rgba(155, 47, 67, 0.34);
+  --red-accent-soft: rgba(155, 47, 67, 0.07);
+  --red-accent-glow: rgba(155, 47, 67, 0.16);
   --ivory: #f7f2e8;
   --ivory-deep: #eee5d6;
   --white: #ffffff;
@@ -1016,30 +1021,35 @@ p {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.info-card {
+.discipline-cards .info-card {
   position: relative;
   min-height: 220px;
   overflow: hidden;
   padding: 28px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--red-accent-line);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.55);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), var(--red-accent-soft));
+  box-shadow:
+    0 14px 34px rgba(155, 47, 67, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42);
   transition: transform 0.35s var(--ease), box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
-.info-card:hover {
-  border-color: rgba(198, 161, 91, 0.5);
-  box-shadow: var(--shadow-sm);
+.discipline-cards .info-card:hover {
+  border-color: rgba(155, 47, 67, 0.62);
+  box-shadow:
+    0 20px 48px rgba(155, 47, 67, 0.18),
+    0 8px 24px rgba(23, 22, 43, 0.08);
   transform: translateY(-6px);
 }
 
-.info-card::after {
+.discipline-cards .info-card::after {
   position: absolute;
   right: -64px;
   bottom: -64px;
   width: 160px;
   height: 160px;
-  border: 1px solid rgba(75, 26, 72, 0.08);
+  border: 1px solid rgba(155, 47, 67, 0.12);
   border-radius: 50%;
   content: "";
 }
@@ -2201,10 +2211,23 @@ p {
 
 .lead-form {
   padding: clamp(28px, 4vw, 46px);
+  border: 1px solid rgba(155, 47, 67, 0.25);
   border-radius: var(--radius-lg);
   background: var(--ivory);
-  box-shadow: 0 35px 90px rgba(7, 6, 16, 0.38);
+  box-shadow:
+    0 35px 90px rgba(7, 6, 16, 0.34),
+    0 0 0 1px rgba(155, 47, 67, 0.06),
+    0 0 38px rgba(155, 47, 67, 0.09);
   color: var(--ink);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lead-form:focus-within {
+  border-color: rgba(155, 47, 67, 0.44);
+  box-shadow:
+    0 35px 90px rgba(7, 6, 16, 0.34),
+    0 0 0 1px rgba(155, 47, 67, 0.1),
+    0 0 54px rgba(155, 47, 67, 0.13);
 }
 
 .lead-form__header {
@@ -3314,9 +3337,12 @@ p {
 .event-card__free {
   margin-bottom: 20px;
   padding: 11px 13px;
-  border: 1px solid rgba(226, 201, 133, 0.24);
+  border: 1px solid rgba(155, 47, 67, 0.6);
   border-radius: 11px;
-  background: rgba(198, 161, 91, 0.07);
+  background: linear-gradient(135deg, rgba(155, 47, 67, 0.24), rgba(111, 31, 49, 0.13));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 10px 28px rgba(80, 14, 32, 0.22);
   color: var(--gold-light);
   font-size: 10px;
   font-weight: 700;
@@ -4247,8 +4273,8 @@ body.legal-open {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 44%;
-  transform: translate3d(0, var(--parallax-y, 0px), 0) scale(1.065);
+  object-position: 40% 48%;
+  transform: translate3d(0, var(--parallax-y, 0px), 0) scale(1.025);
 }
 
 .teacher__image-accent {
@@ -4454,7 +4480,10 @@ body.legal-open {
     transform: translate3d(0, 28px, 0) scale(0.97);
   }
 
-  .teacher__image-shell img,
+  .teacher__image-shell img {
+    transform: scale(1.025);
+  }
+
   .community-event__image-frame img {
     transform: scale(1.035);
   }
@@ -4495,7 +4524,10 @@ body.legal-open {
     transition: none !important;
   }
 
-  .teacher__image-shell img,
+  .teacher__image-shell img {
+    transform: scale(1.025) !important;
+  }
+
   .community-event__image-frame img,
   .event-card::after {
     transform: scale(1.035) !important;
