@@ -55,21 +55,31 @@
 
   /** Regia editoriale: card e righe di testo ricevono un indice breve, così
    *  ogni blocco si costruisce in sequenza senza lasciare contenuti in attesa. */
+  const motionChildren = (group) => Array.from(group.children).filter(
+    (child) => !child.matches(".sr-only, .honeypot, [hidden], input[type=\"hidden\"]")
+  );
+
   document.querySelectorAll("[data-stagger]").forEach((group) => {
-    Array.from(group.children).forEach((child, index) => {
+    const soft = group.dataset.stagger === "soft";
+    const baseDelay = soft ? 38 : 70;
+    const delayStep = soft ? 52 : 92;
+
+    motionChildren(group).forEach((child, index) => {
       child.style.setProperty("--stagger-index", String(Math.min(index, 6)));
-      child.style.setProperty("--stagger-delay", `${80 + Math.min(index, 6) * 84}ms`);
+      child.style.setProperty("--stagger-delay", `${baseDelay + Math.min(index, 6) * delayStep}ms`);
     });
   });
 
   document.querySelectorAll("[data-flow]").forEach((group) => {
-    Array.from(group.children)
-      .filter((child) => !child.classList.contains("sr-only"))
-      .forEach((child, index) => {
-        child.classList.add("flow-item");
-        child.style.setProperty("--flow-index", String(Math.min(index, 8)));
-        child.style.setProperty("--flow-delay", `${110 + Math.min(index, 8) * 74}ms`);
-      });
+    const tight = group.dataset.flow === "tight";
+    const baseDelay = tight ? 55 : 90;
+    const delayStep = tight ? 46 : 76;
+
+    motionChildren(group).forEach((child, index) => {
+      child.classList.add("flow-item");
+      child.style.setProperty("--flow-index", String(Math.min(index, 8)));
+      child.style.setProperty("--flow-delay", `${baseDelay + Math.min(index, 8) * delayStep}ms`);
+    });
   });
 
   /** La skip link sposta sia lo scroll sia il focus sul contenuto principale. */
