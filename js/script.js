@@ -24,6 +24,7 @@
       word.textContent = part;
       word.setAttribute("aria-hidden", "true");
       word.style.setProperty("--word-index", String(state.index));
+      word.style.setProperty("--word-delay", `${35 + Math.min(state.index, 12) * 58}ms`);
       state.index += 1;
       fragment.append(word);
     });
@@ -52,11 +53,23 @@
     splitDescendantText(element, { index: 0 });
   });
 
-  /** Nei gruppi, gli elementi entrano uno dopo l’altro. */
+  /** Regia editoriale: card e righe di testo ricevono un indice breve, così
+   *  ogni blocco si costruisce in sequenza senza lasciare contenuti in attesa. */
   document.querySelectorAll("[data-stagger]").forEach((group) => {
     Array.from(group.children).forEach((child, index) => {
-      child.style.setProperty("--stagger-index", String(index));
+      child.style.setProperty("--stagger-index", String(Math.min(index, 6)));
+      child.style.setProperty("--stagger-delay", `${80 + Math.min(index, 6) * 84}ms`);
     });
+  });
+
+  document.querySelectorAll("[data-flow]").forEach((group) => {
+    Array.from(group.children)
+      .filter((child) => !child.classList.contains("sr-only"))
+      .forEach((child, index) => {
+        child.classList.add("flow-item");
+        child.style.setProperty("--flow-index", String(Math.min(index, 8)));
+        child.style.setProperty("--flow-delay", `${110 + Math.min(index, 8) * 74}ms`);
+      });
   });
 
   /** La skip link sposta sia lo scroll sia il focus sul contenuto principale. */
@@ -94,45 +107,133 @@
     });
   });
 
-  /** Reveal allo scroll con fallback senza JavaScript e reduced motion. */
-  const revealElements = document.querySelectorAll("[data-reveal], [data-compose], [data-stagger]");
+  const counterElements = document.querySelectorAll("[data-counter]");
+  const numberFormatter = new Intl.NumberFormat("it-IT");
 
-  if (revealElements.length > 0) {
-    if (reducedMotion.matches || !("IntersectionObserver" in window)) {
-      revealElements.forEach((element) => element.classList.add("is-visible"));
-    } else {
-      documentElement.classList.add("reveal-ready");
+  const setCounterFinalValue = (counter) => {
+    const output = counter.querySelector("[data-counter-output]") || counter;
+    const value = Number(counter.dataset.counter || 0);
+    const suffix = counter.dataset.counterSuffix || "";
+    output.textContent = `${numberFormatter.format(value)}${suffix}`;
+  };
 
-      const revealObserver = new IntersectionObserver(
-        (entries, observer) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
-          });
-        },
-        { rootMargin: "0px 0px -9%", threshold: 0.08 }
-      );
+  const animateCounter = (counter) => {
+    if (counter.dataset.counterAnimated === "true") return;
+    counter.dataset.counterAnimated = "true";
 
-      revealElements.forEach((element) => revealObserver.observe(element));
+    if (reducedMotion.matches) {
+      setCounterFinalValue(counter);
+      return;
     }
+
+    const output = counter.querySelector("[data-counter-output]") || counter;
+    const target = Number(counter.dataset.counter || 0);
+    const suffix = counter.dataset.counterSuffix || "";
+    const duration = 1250;
+    const startTime = performance.now();
+
+    const render = (time) => {
+      const progress = Math.min(1, (time - startTime) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      output.textContent = `${numberFormatter.format(Math.round(target * eased))}${suffix}`;
+      if (progress < 1) window.requestAnimationFrame(render);
+    };
+
+    window.requestAnimationFrame(render);
+  };
+
+  /** Reveal coordinati: titoli, fotografie, testi e gruppi entrano quando
+   *  raggiungono il punto di lettura. */
+  const revealElements = document.querySelectorAll("[data-reveal], [data-compose], [data-stagger], [data-flow]");
+  const canObserve = "IntersectionObserver" in window;
+
+  if (reducedMotion.matches || !canObserve) {
+    documentElement.classList.add("reveal-ready");
+    revealElements.forEach((element) => element.classList.add("is-visible"));
+    counterElements.forEach(setCounterFinalValue);
+  } else {
+    documentElement.classList.add("reveal-ready");
+
+    const revealObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          entry.target.querySelectorAll("[data-counter]").forEach(animateCounter);
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -10%", threshold: 0.1 }
+    );
+
+    const counterObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          animateCounter(entry.target);
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -8%", threshold: 0.35 }
+    );
+
+    revealElements.forEach((element) => revealObserver.observe(element));
+    counterElements.forEach((counter) => counterObserver.observe(counter));
+
+    /** Fallback geometrico: garantisce che nessun riquadro o ritratto resti
+     *  nascosto se l'observer viene inizializzato mentre il browser ripristina
+     *  lo scroll o mentre le immagini modificano l'altezza della pagina. */
+    const revealVisibleElements = () => {
+      const viewportHeight = window.innerHeight || documentElement.clientHeight;
+
+      revealElements.forEach((element) => {
+        if (element.classList.contains("is-visible")) return;
+
+        const rect = element.getBoundingClientRect();
+        const isInReadingArea = rect.top <= viewportHeight * 0.96 && rect.bottom >= 0;
+        if (!isInReadingArea) return;
+
+        element.classList.add("is-visible");
+        element.querySelectorAll("[data-counter]").forEach(animateCounter);
+        revealObserver.unobserve(element);
+      });
+    };
+
+    let revealFallbackFrame = null;
+    const queueRevealFallback = () => {
+      if (revealFallbackFrame !== null) return;
+      revealFallbackFrame = window.requestAnimationFrame(() => {
+        revealFallbackFrame = null;
+        revealVisibleElements();
+      });
+    };
+
+    window.requestAnimationFrame(revealVisibleElements);
+    window.setTimeout(revealVisibleElements, 500);
+    window.addEventListener("pageshow", queueRevealFallback);
+    window.addEventListener("scroll", queueRevealFallback, { passive: true });
+    window.addEventListener("resize", queueRevealFallback, { passive: true });
   }
 
-  /** Leggero movimento prospettico delle fotografie durante lo scroll. */
+  /** Movimento prospettico limitato alle sole immagini vicine al viewport. */
   const parallaxElements = document.querySelectorAll("[data-parallax], [data-parallax-surface]");
 
   if (parallaxElements.length > 0) {
+    const activeParallaxElements = new Set();
+    const compactViewport = window.matchMedia("(max-width: 760px)");
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
     let parallaxFrame = null;
     let parallaxIsActive = false;
+    let parallaxObserver = null;
 
     const updateParallax = () => {
       const viewportCenter = window.innerHeight / 2;
 
-      parallaxElements.forEach((element) => {
+      activeParallaxElements.forEach((element) => {
         const bounds = element.getBoundingClientRect();
         const elementCenter = bounds.top + bounds.height / 2;
         const progress = Math.max(-1, Math.min(1, (elementCenter - viewportCenter) / (window.innerHeight + bounds.height)));
-        const amplitude = element.hasAttribute("data-parallax-surface") ? 18 : 26;
+        const amplitude = element.hasAttribute("data-parallax-surface") ? 14 : 18;
         element.style.setProperty("--parallax-y", `${(-progress * amplitude).toFixed(1)}px`);
       });
 
@@ -147,6 +248,21 @@
     const enableParallax = () => {
       if (parallaxIsActive) return;
       parallaxIsActive = true;
+      parallaxObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              activeParallaxElements.add(entry.target);
+            } else {
+              activeParallaxElements.delete(entry.target);
+              entry.target.style.removeProperty("--parallax-y");
+            }
+          });
+          requestParallaxUpdate();
+        },
+        { rootMargin: "20% 0px" }
+      );
+      parallaxElements.forEach((element) => parallaxObserver.observe(element));
       updateParallax();
       window.addEventListener("scroll", requestParallaxUpdate, { passive: true });
       window.addEventListener("resize", requestParallaxUpdate);
@@ -157,13 +273,17 @@
       parallaxIsActive = false;
       window.removeEventListener("scroll", requestParallaxUpdate);
       window.removeEventListener("resize", requestParallaxUpdate);
+      parallaxObserver?.disconnect();
+      parallaxObserver = null;
+      activeParallaxElements.clear();
       if (parallaxFrame !== null) window.cancelAnimationFrame(parallaxFrame);
       parallaxFrame = null;
       parallaxElements.forEach((element) => element.style.removeProperty("--parallax-y"));
     };
 
     const syncParallaxPreference = () => {
-      if (reducedMotion.matches) {
+      const saveData = navigator.connection?.saveData === true;
+      if (!canObserve || reducedMotion.matches || compactViewport.matches || coarsePointer.matches || saveData) {
         disableParallax();
       } else {
         enableParallax();
@@ -172,6 +292,8 @@
 
     syncParallaxPreference();
     reducedMotion.addEventListener?.("change", syncParallaxPreference);
+    compactViewport.addEventListener?.("change", syncParallaxPreference);
+    coarsePointer.addEventListener?.("change", syncParallaxPreference);
   }
 
   /** Le pagine legali si aprono in un dialog accessibile; senza supporto al
