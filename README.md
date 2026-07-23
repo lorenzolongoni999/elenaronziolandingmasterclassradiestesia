@@ -34,12 +34,12 @@ landing-radiestesia/
     │   └── README.md
     └── images/
         ├── elena-ronzio.jpg
-        ├── antonina-scolaro.jpg
         ├── logo-elena-ronzio.png
         ├── pendolo-community.jpg
-        ├── pendolo-discipline-background.jpg
         └── pendolo-masterclass.jpg
 ```
+
+Per la pubblicazione diretta su GitHub, il ritratto di Antonina e lo sfondo della seconda sezione sono incorporati rispettivamente in `index.html` e `css/style.css`.
 
 ## Configurazioni prima della pubblicazione
 
